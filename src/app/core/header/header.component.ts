@@ -1,6 +1,9 @@
 import {Component, OnInit} from '@angular/core';
 import {DataStorageService} from '../../shared/data-storage.service';
 import {AuthService} from '../../auth/auth.service';
+import {HttpResponse} from '@angular/common/http';
+import {Ingredient} from '../../shared/ingredient.model';
+import {Recipe} from '../../recipes/recipe.model';
 
 @Component({
     selector: 'app-header',
@@ -20,12 +23,18 @@ export class HeaderComponent implements OnInit {
 
     saveToDb() {
         this.dataStorageService.saveIngredientsToDb().subscribe(
-            (response) => console.log('ingredients updates to server: ' + response.status + ' (' + response.statusText + ')'),
-            (error) => console.log(error)
+            (response: HttpResponse<Ingredient[]>) => {
+                // console.log(response);
+                console.log('ingredients updates to server: ' + response.status + ' (' + response.statusText + ')');
+            },
+                    (error) => console.log(error)
         );
         this.dataStorageService.saveRecipesToDb().subscribe(
-            (response) => console.log('recipes updates to server: ' + response.status + ' (' + response.statusText + ')'),
-            (error) => console.log(error)
+            (response: HttpResponse<Recipe[]>) => {
+                // console.log(response);
+                console.log('recipes updates to server: ' + response.status + ' (' + response.statusText + ')');
+                },
+                    (error) => console.log(error)
         );
     }
 

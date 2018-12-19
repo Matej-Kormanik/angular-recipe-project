@@ -1,41 +1,54 @@
 import {Injectable} from '@angular/core';
-import {Http, Response} from '@angular/http';
 import {RecipeService} from '../recipes/recipe.service';
 import {Observable} from 'rxjs/Observable';
 import {ShoppingListService} from '../shopping-list/shopping-list.service';
 import 'rxjs/Rx';
 import {Recipe} from '../recipes/recipe.model';
 import {AuthService} from '../auth/auth.service';
+import {HttpClient, HttpHeaders, HttpParams, HttpResponse} from '@angular/common/http';
+import {Ingredient} from './ingredient.model';
 
 @Injectable({
     providedIn: 'root'
 })
 export class DataStorageService {
 
-    constructor(private http: Http, private recipeService: RecipeService,
+    constructor(private http: HttpClient,
+                private recipeService: RecipeService,
                 private ingredientsService: ShoppingListService,
                 private authService: AuthService) {
     }
 
 
-    saveRecipesToDb(): Observable<Response> {
+    saveRecipesToDb(): Observable<HttpResponse<Recipe[]>> {
         const token = this.authService.getToken();
-        return this.http.put('https://recipe-project-mk.firebaseio.com/recipes.json?auth=' + token, this.recipeService.getAllRecipes());
+        return this.http.put<Recipe[]>(
+            'https://recipe-project-mk.firebaseio.com/recipes.json',
+            this.recipeService.getAllRecipes(),
+            {
+                observe: 'response',
+                headers: new HttpHeaders().set('Content-Type', 'application/json'),
+                params: new HttpParams().set('auth', token)
+            });
     }
 
-    saveIngredientsToDb(): Observable<Response> {
+    saveIngredientsToDb(): Observable<HttpResponse<Ingredient[]>> {
         const token = this.authService.getToken();
-        return this.http.put('https://recipe-project-mk.firebaseio.com/ingredients.json?auth=' + token, this.ingredientsService.getAllIngredients());
+        return this.http.put<Ingredient[]>(
+            'https://recipe-project-mk.firebaseio.com/ingredients.json',
+            this.ingredientsService.getAllIngredients(),
+            {
+                observe: 'response',
+                params: new HttpParams().set('auth', token)
+            });
     }
 
 
     fetchRecipesFromDb() {
         const token = this.authService.getToken();
 
-        return this.http.get('https://recipe-project-mk.firebaseio.com/recipes.json?auth=' + token)
-            .map((response: Response) => {
-                console.log('recipes fetched: ' + response.status + ' (' + response.statusText + ')');
-                const recipes: Recipe[] = response.json();
+        return this.http.get<Recipe[]>('https://recipe-project-mk.firebaseio.com/recipes.json?auth=' + token)
+            .map((recipes: Recipe[]) => {
                 for (const recipe of recipes) {
                     if (!recipe['ingredients']) {
                         recipe['ingredients'] = [];
@@ -45,6 +58,7 @@ export class DataStorageService {
             })
             .subscribe((recipes: Recipe[]) => {
                     this.recipeService.setAllRecipes(recipes);
+                    console.log('Recipes fetched successfully.');
                 }, (error) => console.log(error)
             );
     }
@@ -53,10 +67,11 @@ export class DataStorageService {
     fetchIngredientsFromDb() {
         const token = this.authService.getToken();
 
-        return this.http.get('https://recipe-project-mk.firebaseio.com/ingredients.json?auth=' + token)
-            .subscribe((response: Response) => {
-                    this.ingredientsService.setAllIngredients(response.json());
-                    console.log('ingredients fetched: ' + response.status + ' (' + response.statusText + ')');
+        return this.http.get<Ingredient[]>('https://recipe-project-mk.firebaseio.com/ingredients.json?auth=' + token)
+            .subscribe((ingredients) => {
+                    this.ingredientsService.setAllIngredients(ingredients);
+                    console.log('Ingredients fetched successfully.');
+                    // console.log('ingredients fetched: ' + response.status + ' (' + response.statusText + ')');
                 }, (error) => console.log(error)
             );
     }
